@@ -23,6 +23,10 @@ library(purrr)
 library(ggpubr)
 ```
 
+Part 1: Combined metric
+
+This code calculates the mean error between the peak and minimum flow for each water year
+  
 ```{r source_func}
 # Source our R script with our function (a combination of at least two performance measures)
 # We have chosen our two measures (relative error for max flow and relative error for low flow) because we figured extremes would be good areas to check model performance, as they deviate more from the majority of values in a normal distribution
@@ -41,8 +45,11 @@ compute_extremes(m = sager$model, o = sager$obs, wy = sager$wy)
 # First value is error for minimum flow averaged across water years
 # Second value is error for maximum flow averaged across water years
 # Third value is error as a combined metric of the first two (equally weighted by default)
+
 ```
 
+# 
+  
 ```{r prep_msage}
 # multiple results - lets say we've run the model for multiple years, 
 #each column  is streamflow for a different parameter set
@@ -67,6 +74,7 @@ msage = left_join(msage, sager[,c("obs","date")], by=c("date"))
 
 head(msage)
 ```
+  
 
 ```{r calibration}
 # subset for split sample calibration
@@ -75,7 +83,6 @@ short_msage = subset(msage, wy < 1975)
 res = short_msage %>% select(-date, -month, -day, -year, -wy, -obs ) %>%
   map_df(compute_extremes, o=short_msage$obs, wy=short_msage$wy)
 # note here we use map_df to get a dataframe back 
-
 
 # interesting to look at range of metrics - could use this to decide on
 # acceptable values
@@ -89,9 +96,30 @@ resl = res %>% pivot_longer(-sim, names_to="metric", values_to="value")
 
 ggplot(resl, aes(metric, value))+geom_boxplot()+facet_wrap(~metric, scales="free")
 
-
 # select the best and worst ones based on the combined metric
-best = res[which.max(res$combined),]
-worst = res[which.min(res$combined),]
+best = res[which.max(res$combined),] #S87
+
+worst = res[which.min(res$combined),] # S8
 ```
 
+**Figure 1.** The distribution of the performance measures for stream flow metrics using 101 different parameter sets. 
+  
+  
+```{r}
+# streamflow estimates from best performing parameter set
+ggplot(msage, aes(date, msage[,best$sim])) + 
+  geom_line(aes(col = "Modeled (S87)")) +
+  geom_line(aes(date, obs, col = "Observed"))  +
+  theme_light() +
+  labs(x = "Date",
+       y = "Streamflow (mm/day)",
+       col = "Parameter Set") +
+  scale_color_manual(values = c("dodgerblue", "black"))
+
+```
+
+**Figure 2.** Stream flow estimates from the best performing parameter set (S87) compared to the observed stream flow.
+
+### Conclusion
+
+We found our best parameter set was S87 and worst parameter set was S8, based on our combined metric using the difference between observed and modeled extreme wet and dry water years. We chose these metrics because we wanted to include the extreme stream flow conditions in water years.
