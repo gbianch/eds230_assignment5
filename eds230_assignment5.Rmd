@@ -2,13 +2,13 @@
 title: 'EDS 230: Assignment 5'
 author: Grace Bianchi, Erika Egg
 output:
-  slidy_presentation:
-    highlight: pygments
-  html_document: default
   pdf_document: default
+  html_document: default
+  beamer_presentation:
+    highlight: pygments
   ioslides_presentation:
     highlight: pygments
-  beamer_presentation:
+  slidy_presentation:
     highlight: pygments
 ---
 
@@ -23,13 +23,13 @@ library(purrr)
 library(ggpubr)
 ```
 
-Part 1: Combined metric
+# Part 1: Combined metric
 
-This code calculates the mean error between the peak and minimum flow for each water year
+This code calculates the mean error for the peak and minimum flow across water years.
   
 ```{r source_func}
 # Source our R script with our function (a combination of at least two performance measures)
-# We have chosen our two measures (relative error for max flow and relative error for low flow) because we figured extremes would be good areas to check model performance, as they deviate more from the majority of values in a normal distribution
+# WHY THESE MEASURES: We have chosen our two measures (relative error for max flow and relative error for low flow) because we figured extremes would be good areas to check model performance, as they deviate more from the majority of values in a normal distribution
 source("R/compute_extremes.R")
 
 # Read in sager data
@@ -45,10 +45,9 @@ compute_extremes(m = sager$model, o = sager$obs, wy = sager$wy)
 # First value is error for minimum flow averaged across water years
 # Second value is error for maximum flow averaged across water years
 # Third value is error as a combined metric of the first two (equally weighted by default)
-
 ```
 
-# 
+# Part 2: Calibration
   
 ```{r prep_msage}
 # multiple results - lets say we've run the model for multiple years, 
@@ -74,7 +73,6 @@ msage = left_join(msage, sager[,c("obs","date")], by=c("date"))
 
 head(msage)
 ```
-  
 
 ```{r calibration}
 # subset for split sample calibration
@@ -97,14 +95,14 @@ resl = res %>% pivot_longer(-sim, names_to="metric", values_to="value")
 ggplot(resl, aes(metric, value))+geom_boxplot()+facet_wrap(~metric, scales="free")
 
 # select the best and worst ones based on the combined metric
-best = res[which.max(res$combined),] #S87
+best = res[which.max(res$combined),] # S87
 
 worst = res[which.min(res$combined),] # S8
 ```
 
 **Figure 1.** The distribution of the performance measures for stream flow metrics using 101 different parameter sets. 
-  
-  
+
+
 ```{r}
 # streamflow estimates from best performing parameter set
 ggplot(msage, aes(date, msage[,best$sim])) + 
